@@ -105,7 +105,7 @@ roslaunch roslaunch so3_quadrotor_simulator task3.launch
 - 为了降低该题目的复杂度，仿真程序提供了二维占据栅格地图的话题：/exploration_grid 类型为 nav_msgs/OccupancyGrid，其中：
   1. 障碍物栅格 为 100
   2. 已探索的自由栅格 为 0
-  3. 未探索的自由栅格 为 -1
+  3. 未探索的自由栅格 为 -1<br>
   该话题用于辅助探索算法，同时，在终端窗口中实时显示当前的探索率，以用来辅助判断和验证：
 ![task3](https://github.com/SKBT-lab/swarm_intelligent_robot_course_task/blob/main/src/figure/3-3.png)
 但是，对于避障环节可能需要的三维体素地图及其他形式的环境表述，仍需学生自行构建。
