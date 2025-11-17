@@ -115,7 +115,7 @@ roslaunch roslaunch so3_quadrotor_simulator task3.launch
 同时，该话题可直接在rviz中进行可视化，效果如下图所示，已探索区域（白色）随着无人机的移动而扩张：<br>
   ![task3](https://github.com/SKBT-lab/swarm_intelligent_robot_course_task/blob/main/src/figure/exp.gif)<br>
   该话题用于辅助探索算法，同时，在终端窗口中实时显示当前的探索率，以用来辅助判断和验证：
-![task3](https://github.com/SKBT-lab/swarm_intelligent_robot_course_task/blob/main/src/figure/3-3.png)
+![task3](https://github.com/SKBT-lab/swarm_intelligent_robot_course_task/blob/main/src/figure/3-3.png)<br>
 但是，对于避障环节可能需要的三维体素地图及其他形式的环境表述，仍需学生自行构建。
 #### 提示
 可参考已有的探索算法的基本流程，值得一提的是，常见的探索算法中无人机的FOV假定为一个扇形区域，而本作业中假定为圆形，这对问题进行了简化，因为不需要考虑yaw角的规划了。
