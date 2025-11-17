@@ -57,8 +57,11 @@ cd robot_ws/
 source devel/setup.bash
 roslaunch roslaunch so3_quadrotor_simulator task1.launch
 ```
-运行后如下面这个，rviz开启，其中运动的无人机即为要追踪的uav1:
+运行后如下所示，rviz开启，其中运动的无人机即为要追踪的uav1:
 ![task1](https://github.com/SKBT-lab/swarm_intelligent_robot_course_task/blob/main/src/figure/task1.gif)
+#### 注意
+选择该题目的同学注意，在完成并编译追踪代码后，请将对应节点放置下图所示的位置并通过task1.launch来启动，以确保uav1和其他无人机是同时启动的
+![task1](https://github.com/SKBT-lab/swarm_intelligent_robot_course_task/blob/main/src/figure/1-code.jpeg)
 # 克隆项目
 git clone https://github.com/your-username/your-repo-name.git
 cd your-repo-name
