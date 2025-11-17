@@ -51,8 +51,12 @@ catkin_make
 - 控制6架无人机uav2-uav7，要求追踪过程中无人机之间不可发生相互碰撞。
 - 要求的最终状态为6架无人机以一个固定的队形包围并随目标无人机一同移动，当所有无人机同目标无人机均保持在1-2m范围的距离内时，视作有效跟随。
 - 要求有效跟随的累积时间大于目标无人机飞行总时间的70%。
-
-
+#### 启动方式
+```bash
+cd robot_ws/
+source devel/setup.bash
+roslaunch roslaunch so3_quadrotor_simulator task1.launch
+```
 # 克隆项目
 git clone https://github.com/your-username/your-repo-name.git
 cd your-repo-name
