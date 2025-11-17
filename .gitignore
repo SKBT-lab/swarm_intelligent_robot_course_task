@@ -1,0 +1,29 @@
+# ROS 构建文件
+build/
+devel/
+install/
+
+# Catkin 特定
+.catkin_workspace
+
+# 编译生成文件
+*.pyc
+__pycache__/
+
+# 日志文件
+*.log
+log/
+
+# IDE 文件
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 备份文件
+*~
+*.bak

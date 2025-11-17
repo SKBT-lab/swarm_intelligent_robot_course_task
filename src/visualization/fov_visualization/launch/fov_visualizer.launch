@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<launch>
+    <!-- FOV可视化节点 -->
+    <node name="fov_visualizer" pkg="fov_visualization" type="fov_visualizer" output="screen">
+        <param name="marker_frame_id" value="world" />
+    </node>
+    
+    <!-- 可选的RViz启动 -->
+    <!-- 
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find fov_visualization)/config/fov_config.rviz" />
+    -->
+</launch>
