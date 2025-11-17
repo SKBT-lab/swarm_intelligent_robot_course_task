@@ -26,7 +26,7 @@ ubuntu20.04(推荐，其他版本未做测试)
 # Clone the repository
 mkdir -p robot_ws/src
 cd robot_ws/src
-git clone https://github.com/SmartGroupSystems/Swarm-Simulator.git
+git clone https://github.com/SKBT-lab/swarm_intelligent_robot_course_task.git
 cd ..
 catkin_make
 ```
