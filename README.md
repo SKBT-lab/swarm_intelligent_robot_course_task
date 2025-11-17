@@ -36,12 +36,17 @@ catkin_make
 任务涉及到的多个无人机按照uavX命名，X为无人机ID，需要执行任务的无人机ID从2号开始递增（1号为Task1中的NPC无人机）。
 1. 无人机位姿话题：<br>
    /uavX/sim/odom 类型：nav_msgs/Odometry
-3. 无人机控制指令:<br>
+2. 无人机控制指令:<br>
    - 上层指令：/uavX/position_cmd  类型：quadrotor_msgs/PositionCommand
      <br>...pathto/src/Swarm-Simulator/src/uav_simulator/so3_control/src/control_example.cpp提供了一个基本的用该指令控制无人机的例程，可用于参考。
    - 底层指令：/uavX/so3_cmd 类型： quadrotor_msgs/SO3Command
   <br>默认情况下本程序通过...path/src/Swarm-Simulator/src/uav_simulator/so3_control/src/so3_control_nodelet.cpp中的简单的PID实现了由上层的PositionCommand向底层的SO3Command的计算，同学们也可以自行尝试采用更高级的控制方法以实现更好的效果（这部分代码允许更改）。
    - quadrotor_msgs的msg类型定义在...pathto/src/Swarm-Simulator/src/uav_simulator/Utils/quadrotor_msgs中，编写程序时记得在cmakelist中填加对包quadrotor_msgs的引用。
+3.碰撞判定<br>
+根据常规无人机尺寸，下面对仿真中的碰撞进行规定：
+   - 若无人机位置同最近的障碍物点云坐标距离小于0.2m，视作发生碰撞。
+   - 若无人机之间的距离小于0.4m， 视作发生碰撞。
+同学们可以在程序中自行判断是否碰撞，后续会更新判断碰撞的脚本用于最终验证。
 
 ## 任务介绍
 ### 任务1 集群围捕
@@ -62,6 +67,25 @@ roslaunch roslaunch so3_quadrotor_simulator task1.launch
 #### 注意
 选择该题目的同学注意，在完成并编译追踪代码后，请将对应节点放置下图所示的位置并通过task1.launch来启动，以确保uav1和其他无人机是同时启动的
 ![task1](https://github.com/SKBT-lab/swarm_intelligent_robot_course_task/blob/main/src/figure/1-code.jpeg)
+#### 提示
+由于目标无人机机动性较强，直接基于其当前位置进行追踪难以保持长久的有效跟随，建议加入对uav1的运动预测。
+### 任务2 集群穿越
+#### 任务要求
+任务目标为控制多架无人机无碰撞穿越障碍区域，飞行时间尽可能短，同时无人机彼此之间的距离需保持在一定范围内。具体任务描述如下：
+- 控制6架无人机uav2-uav7穿越一个50m×50m的障碍区域，要求穿越过程不发生相互碰撞以及同障碍物之间的碰撞。
+- 无人机之间的距离应保持在0.5m-5m之间：出于安全考虑，无人机之间不宜过近；出于通讯考虑，无人机之间不宜过远。
+#### 启动方式
+```bash
+cd robot_ws/
+source devel/setup.bash
+roslaunch roslaunch so3_quadrotor_simulator task2.launch
+```
+运行后如下所示，rviz开启，无人机群从左上角出发，右下方的红点为目标点，集群整体飞行至目标点附近即可。
+![task2](https://github.com/SKBT-lab/swarm_intelligent_robot_course_task/blob/main/src/figure/2-1.jpeg)
+#### 注意
+- 全局地图以点云的形式给出，话题为： /mock_map 类型为 sensor_msgs/PointCloud2
+#### 提示
+由于给出地图的是原始点云，需首先转为栅格或体素地图再进行进一步处理。
 # 克隆项目
 git clone https://github.com/your-username/your-repo-name.git
 cd your-repo-name
