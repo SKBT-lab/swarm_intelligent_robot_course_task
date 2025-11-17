@@ -86,6 +86,25 @@ roslaunch roslaunch so3_quadrotor_simulator task2.launch
 - 全局地图以点云的形式给出，话题为： /mock_map 类型为 sensor_msgs/PointCloud2
 #### 提示
 由于给出地图的是原始点云，需首先转为栅格或体素地图再进行进一步处理。
+### 任务3 集群探索
+#### 任务要求
+任务目标为多架无人机在有限的FOV下，从地图中心出发，向四周探索，直至指定范围区域被所有无人机的历史FOV全覆盖。具体任务描述如下：
+- 控制6架无人机uav2-uav7探索一个50m×50m的障碍区域，该区域的障碍物密度低于Task2，同样不允许发生任何形式的碰撞。
+- 尽可能快地完成对整个场景的探索。
+- 假设无人机的相机竖直向下安装，对于一个（x,y,z）位置处的无人机，其FOV为地面上一个以（x，y）为圆心，半径r=0.5z的圆形范围。入下图所示：
+  ![task2](https://github.com/SKBT-lab/swarm_intelligent_robot_course_task/blob/main/src/figure/fov.gif)
+#### 启动方式
+```bash
+cd robot_ws/
+source devel/setup.bash
+roslaunch roslaunch so3_quadrotor_simulator task3.launch
+```
+运行后如下所示，rviz开启，无人机群从左上角出发，右下方的红点为目标点，集群整体飞行至目标点附近即可。
+![task2](https://github.com/SKBT-lab/swarm_intelligent_robot_course_task/blob/main/src/figure/2-1.jpeg)
+#### 注意
+- 全局地图以点云的形式给出，话题为： /mock_map 类型为 sensor_msgs/PointCloud2
+#### 提示
+由于给出地图的是原始点云，需首先转为栅格或体素地图再进行进一步处理。
 # 克隆项目
 git clone https://github.com/your-username/your-repo-name.git
 cd your-repo-name
