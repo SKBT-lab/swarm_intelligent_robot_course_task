@@ -34,13 +34,13 @@ catkin_make
 ## 基本接口
 下面是四个任务都需要用到的一些基本接口：
 任务涉及到的多个无人机按照uavX命名，X为无人机ID，需要执行任务的无人机ID从2号开始递增（1号为Task1中的NPC无人机）。
-1. 无人机位姿话题：
+1. 无人机位姿话题：<br>
    /uavX/sim/odom 类型：nav_msgs/Odometry
-3. 无人机控制指令
+3. 无人机控制指令:<br>
    - 上层指令：/uavX/position_cmd  类型：quadrotor_msgs/PositionCommand
      <br>...pathto/src/Swarm-Simulator/src/uav_simulator/so3_control/src/control_example.cpp提供了一个基本的用该指令控制无人机的例程，可用于参考。
    - 底层指令：/uavX/so3_cmd 类型： quadrotor_msgs/SO3Command
-  默认情况下本程序通过...path/src/Swarm-Simulator/src/uav_simulator/so3_control/src/so3_control_nodelet.cpp中的简单的PID实现了由上层的PositionCommand向底层的SO3Command的计算，同学们也可以自行尝试采用更高级的控制方法以实现更好的效果（这部分代码允许更改）。
+  <br>默认情况下本程序通过...path/src/Swarm-Simulator/src/uav_simulator/so3_control/src/so3_control_nodelet.cpp中的简单的PID实现了由上层的PositionCommand向底层的SO3Command的计算，同学们也可以自行尝试采用更高级的控制方法以实现更好的效果（这部分代码允许更改）。
    - quadrotor_msgs的msg类型定义在...pathto/src/Swarm-Simulator/src/uav_simulator/Utils/quadrotor_msgs中，编写程序时记得在cmakelist中填加对包quadrotor_msgs的引用。
 
 ## 任务介绍
