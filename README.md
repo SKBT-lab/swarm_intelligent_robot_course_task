@@ -140,7 +140,7 @@ roslaunch roslaunch so3_quadrotor_simulator task4.launch
 - 每次运行，三个区域的大小和位置在一定范围内随机生成，相关几何和位置信息通过三个占据栅格的话题给出：
   1. /region1_exploration_grid
   2. /region2_exploration_grid
-  3. /region3_exploration_grid
+  3. /region3_exploration_grid<br>
      它们均为nav_msgs/OccupancyGrid类型。
 #### 提示
 - 如果对探索问题不是很了解，建议看一下任务3的相关说明。
