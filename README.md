@@ -20,7 +20,7 @@
 ## 运行环境
 ubuntu20.04(推荐，其他版本未做测试)
 
-### 安装以编译
+## 安装以编译
 
 ```bash
 # Clone the repository
@@ -31,10 +31,28 @@ cd ..
 catkin_make
 ```
 
+## 基本接口
+下面是四个任务都需要用到的一些基本接口：
+任务涉及到的多个无人机按照uavX命名，X为无人机ID，需要执行任务的无人机ID从2号开始递增（1号为Task1中的NPC无人机）。
+1. 无人机位姿话题：
+/uavX/sim/odom 类型：nav_msgs/Odometry
+2. 无人机控制指令
+   - 上层指令：/uavX/position_cmd 类型：quadrotor_msgs/PositionCommand
+  ...pathto/src/Swarm-Simulator/src/uav_simulator/so3_control/src/control_example.cpp提供了一个基本的用该指令控制无人机的例程，可用于参考。
+   - 底层指令：/uavX/so3_cmd 类型： quadrotor_msgs/SO3Command
+  默认情况下本程序通过...path/src/Swarm-Simulator/src/uav_simulator/so3_control/src/so3_control_nodelet.cpp中的简单的PID实现了由上层的PositionCommand向底层的SO3Command的计算，同学们也可以自行尝试采用更高级的控制方法以实现更好的效果（这部分代码允许更改）。
+   - quadrotor_msgs的msg类型定义在...pathto/src/Swarm-Simulator/src/uav_simulator/Utils/quadrotor_msgs中，编写程序时记得在cmakelist中填加对包quadrotor_msgs的引用。
 
-### 安装
+## 任务介绍
+### 任务1 集群围捕
+#### 任务要求
+任务目标为对于一个高速移动的大机动目标，用多架无人机实现跟踪和包围。具体任务描述如下：
+- 围捕目标为uav1，可通过/uav1/sim/odom实时获取它的位置坐标，但是严禁通过/uav1/position_cmd干扰其运动状态！打分的时候助教会检查源码。
+- 控制6架无人机uav2-uav7，要求追踪过程中无人机之间不可发生相互碰撞。
+- 要求的最终状态为6架无人机以一个固定的队形包围并随目标无人机一同移动，当所有无人机同目标无人机均保持在1-2m范围的距离内时，视作有效跟随。
+- 要求有效跟随的累积时间大于目标无人机飞行总时间的70%。
 
-```bash
+
 # 克隆项目
 git clone https://github.com/your-username/your-repo-name.git
 cd your-repo-name
