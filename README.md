@@ -35,8 +35,8 @@ catkin_make
 下面是四个任务都需要用到的一些基本接口：
 任务涉及到的多个无人机按照uavX命名，X为无人机ID，需要执行任务的无人机ID从2号开始递增（1号为Task1中的NPC无人机）。
 1. 无人机位姿话题：
-/uavX/sim/odom 类型：nav_msgs/Odometry
-2. 无人机控制指令
+   /uavX/sim/odom 类型：nav_msgs/Odometry
+3. 无人机控制指令
    - 上层指令：/uavX/position_cmd  类型：quadrotor_msgs/PositionCommand
   ...pathto/src/Swarm-Simulator/src/uav_simulator/so3_control/src/control_example.cpp提供了一个基本的用该指令控制无人机的例程，可用于参考。
    - 底层指令：/uavX/so3_cmd 类型： quadrotor_msgs/SO3Command
