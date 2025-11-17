@@ -171,7 +171,7 @@ public:
         updateExplorationStatus();
         
         // 发布探索状态可视化
-        // publishExplorationStatus();
+        publishExplorationStatus();
         
         // 发布更新的网格信息
         publishGridInfo();
@@ -329,47 +329,47 @@ private:
                         grid_width_, grid_height_, grid_resolution_);
 }
     
-    // void publishExplorationStatus() {
-    //     visualization_msgs::Marker explored_marker;
-    //     setupMarker(explored_marker, "explored_area", 0, visualization_msgs::Marker::CUBE_LIST);
-    //     explored_marker.scale.x = grid_resolution_;
-    //     explored_marker.scale.y = grid_resolution_;
-    //     explored_marker.scale.z = 0.01;
-    //     explored_marker.color.r = 0.0;
-    //     explored_marker.color.g = 1.0;
-    //     explored_marker.color.b = 0.0;
-    //     explored_marker.color.a = 0.8;
+    void publishExplorationStatus() {
+        // visualization_msgs::Marker explored_marker;
+        // setupMarker(explored_marker, "explored_area", 0, visualization_msgs::Marker::CUBE_LIST);
+        // explored_marker.scale.x = grid_resolution_;
+        // explored_marker.scale.y = grid_resolution_;
+        // explored_marker.scale.z = 0.01;
+        // explored_marker.color.r = 0.0;
+        // explored_marker.color.g = 1.0;
+        // explored_marker.color.b = 0.0;
+        // explored_marker.color.a = 0.8;
 
-    //     // std::cout << grid_resolution_ << std::endl;
+        // // std::cout << grid_resolution_ << std::endl;
         
-    //     // 添加所有已探索的网格
-    //     for (int y = 0; y < grid_height_; ++y) {
-    //         for (int x = 0; x < grid_width_; ++x) {
-    //             int index = y * grid_width_ + x;
-    //             if (grid_status_[index] == EXPLORED) {
-    //                 Eigen::Vector2d world_pos = gridToWorld(x, y);
-    //                 geometry_msgs::Point p;
-    //                 p.x = world_pos.x();
-    //                 p.y = world_pos.y();
-    //                 p.z = 0.0;
-    //                 explored_marker.points.push_back(p);
-    //             }
-    //         }
-    //     }
+        // // 添加所有已探索的网格
+        // for (int y = 0; y < grid_height_; ++y) {
+        //     for (int x = 0; x < grid_width_; ++x) {
+        //         int index = y * grid_width_ + x;
+        //         if (grid_status_[index] == EXPLORED) {
+        //             Eigen::Vector2d world_pos = gridToWorld(x, y);
+        //             geometry_msgs::Point p;
+        //             p.x = world_pos.x();
+        //             p.y = world_pos.y();
+        //             p.z = 0.0;
+        //             explored_marker.points.push_back(p);
+        //         }
+        //     }
+        // }
         
-    //     exploration_pub_.publish(explored_marker);
+        // exploration_pub_.publish(explored_marker);
         
-    //     // 计算探索进度（排除障碍物）
-    //     int explored_count = countGridsByStatus(EXPLORED);
-    //     int obstacle_count = countGridsByStatus(OBSTACLE);
-    //     int explorable_count = grid_status_.size() - obstacle_count;
+        // 计算探索进度（排除障碍物）
+        int explored_count = countGridsByStatus(EXPLORED);
+        int obstacle_count = countGridsByStatus(OBSTACLE);
+        int explorable_count = grid_status_.size() - obstacle_count;
         
-    //     double progress = (explorable_count > 0) ? 
-    //                      static_cast<double>(explored_count) / explorable_count : 0.0;
+        double progress = (explorable_count > 0) ? 
+                         static_cast<double>(explored_count) / explorable_count : 0.0;
         
-    //     ROS_INFO_THROTTLE(5.0, "Exploration progress: %.1f%% (%d/%d cells, %d obstacles)", 
-    //                      progress * 100.0, explored_count, explorable_count, obstacle_count);
-    // }
+        ROS_INFO_THROTTLE(5.0, "Exploration progress: %.1f%% (%d/%d cells, %d obstacles)", 
+                         progress * 100.0, explored_count, explorable_count, obstacle_count);
+    }
     
     // void publishObstacleMap() {
     //     visualization_msgs::Marker obstacle_marker;
