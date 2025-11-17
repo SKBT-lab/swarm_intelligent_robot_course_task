@@ -127,6 +127,7 @@ roslaunch roslaunch so3_quadrotor_simulator task3.launch
 - 所有无人机保持在5m的固定高度。
 - 无人机飞行过程中间隔不得低于3m。
 - 无人机离开起点视作起飞，而在题目程序指定的无人机起点中，最大间隔为2.8m，这意味着在上一条约束下，无人机不得同时起飞，起飞的时间间隔也在规划的范围内。
+- 三个区域总探索度大于95%视作是探索完成，要求完成探索的时间尽可能短。
 #### 启动方式
 ```bash
 cd robot_ws/
@@ -136,15 +137,12 @@ roslaunch roslaunch so3_quadrotor_simulator task4.launch
 运行后如下所示，rviz开启，三个灰色区域为待探索区域。
 ![task2](https://github.com/SKBT-lab/swarm_intelligent_robot_course_task/blob/main/src/figure/task4.png)
 #### 注意
-- 全局地图以点云的形式给出，话题为： /mock_map 类型为 sensor_msgs/PointCloud2
+- 每次运行，三个区域的大小和位置在一定范围内随机生成，相关几何和位置信息通过三个占据栅格的话题给出：
+  1. /region1_exploration_grid
+  2. /region2_exploration_grid
+  3. /region3_exploration_grid
+     它们均为nav_msgs/OccupancyGrid类型。
 #### 提示
-由于给出地图的是原始点云，需首先转为栅格或体素地图再进行进一步处理。
-# 克隆项目
-git clone https://github.com/your-username/your-repo-name.git
-cd your-repo-name
+- 如果对探索问题不是很了解，建议看一下任务3的相关说明。
+- nav_msgs/OccupancyGrid类型中的栅格坐标采用的是图像坐标系，即原点位于左上角，结合该话题消息中的栅格分辨率、原点坐标、栅格坐标等信息，可完成栅格坐标向世界坐标的转换。
 
-# 安装依赖
-npm install
-
-# 运行项目
-npm start
