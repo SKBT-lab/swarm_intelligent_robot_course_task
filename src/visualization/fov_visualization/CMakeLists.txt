@@ -27,7 +27,6 @@ find_package(Eigen3 REQUIRED)
 
 # Catkin特定配置
 catkin_package(
-  INCLUDE_DIRS include
   LIBRARIES exploration_visualization
   CATKIN_DEPENDS 
     roscpp 

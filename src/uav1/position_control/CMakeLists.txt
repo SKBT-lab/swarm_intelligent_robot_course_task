@@ -20,7 +20,6 @@ find_package(catkin REQUIRED COMPONENTS
 
 # Catkin包配置
 catkin_package(
-  INCLUDE_DIRS include
   CATKIN_DEPENDS roscpp quadrotor_msgs minimumsnap
 )
 
