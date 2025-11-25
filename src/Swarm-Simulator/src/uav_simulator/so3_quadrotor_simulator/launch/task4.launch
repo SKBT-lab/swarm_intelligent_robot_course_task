@@ -1,0 +1,105 @@
+<launch>
+    <!-- UAV 2 -->
+    <group ns="uav2">
+        <include file="$(find so3_quadrotor_simulator)/launch/simulator.launch">
+            <arg name="init_x" value="-2"/>
+            <arg name="init_y" value="-1"/>
+            <arg name="init_z" value="1"/>
+            <arg name="namespace" value="uav2"/>
+        </include>
+    </group>
+
+    <!-- UAV 3 -->
+    <group ns="uav3">
+        <include file="$(find so3_quadrotor_simulator)/launch/simulator.launch">
+            <arg name="init_x" value="-2"/>
+            <arg name="init_y" value="0"/>
+            <arg name="init_z" value="1"/>
+            <arg name="namespace" value="uav2"/>
+        </include>
+    </group>
+
+    <!-- UAV 4 -->
+    <group ns="uav4">
+        <include file="$(find so3_quadrotor_simulator)/launch/simulator.launch">
+            <arg name="init_x" value="-2"/>
+            <arg name="init_y" value="1"/>
+            <arg name="init_z" value="1"/>
+            <arg name="namespace" value="uav2"/>
+        </include>
+    </group>
+
+    <!-- UAV 5 -->
+    <group ns="uav5">
+        <include file="$(find so3_quadrotor_simulator)/launch/simulator.launch">
+            <arg name="init_x" value="-1"/>
+            <arg name="init_y" value="-1"/>
+            <arg name="init_z" value="1"/>
+            <arg name="namespace" value="uav2"/>
+        </include>
+    </group>
+
+    <!-- UAV 6 -->
+    <group ns="uav6">
+        <include file="$(find so3_quadrotor_simulator)/launch/simulator.launch">
+            <arg name="init_x" value="-1"/>
+            <arg name="init_y" value="0"/>
+            <arg name="init_z" value="1"/>
+            <arg name="namespace" value="uav2"/>
+        </include>
+    </group>
+
+    <!-- UAV 7 -->
+    <group ns="uav7">
+        <include file="$(find so3_quadrotor_simulator)/launch/simulator.launch">
+            <arg name="init_x" value="-1"/>
+            <arg name="init_y" value="1"/>
+            <arg name="init_z" value="1"/>
+            <arg name="namespace" value="uav2"/>
+        </include>
+    </group>
+
+    <!-- UAV 8 -->
+    <group ns="uav8">
+        <include file="$(find so3_quadrotor_simulator)/launch/simulator.launch">
+            <arg name="init_x" value="0"/>
+            <arg name="init_y" value="-1"/>
+            <arg name="init_z" value="1"/>
+            <arg name="namespace" value="uav2"/>
+        </include>
+    </group>
+
+    <!-- UAV 9 -->
+    <group ns="uav9">
+        <include file="$(find so3_quadrotor_simulator)/launch/simulator.launch">
+            <arg name="init_x" value="0"/>
+            <arg name="init_y" value="0"/>
+            <arg name="init_z" value="1"/>
+            <arg name="namespace" value="uav2"/>
+        </include>
+    </group>
+
+    <!-- UAV 10 -->
+    <group ns="uav10">
+        <include file="$(find so3_quadrotor_simulator)/launch/simulator.launch">
+            <arg name="init_x" value="0"/>
+            <arg name="init_y" value="1"/>
+            <arg name="init_z" value="1"/>
+            <arg name="namespace" value="uav2"/>
+        </include>
+    </group>
+
+
+    <node name="fov_visualizer2" pkg="fov_visualization" type="fov_visualizer2" output="screen">
+        <param name="marker_frame_id" value="world" />
+    </node>
+
+    <node name="region_visualizer2" pkg="fov_visualization" type="region_visualizer2" output="screen">
+        <param name="marker_frame_id" value="world" />
+    </node>
+
+
+    <!-- RVIZ -->
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find so3_quadrotor_simulator)/config/rviz.rviz"/>
+  
+</launch>
