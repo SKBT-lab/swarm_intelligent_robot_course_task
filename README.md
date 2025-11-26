@@ -58,7 +58,7 @@ catkin_make
 ```bash
 cd robot_ws/
 source devel/setup.bash
-roslaunch roslaunch so3_quadrotor_simulator task1.launch
+roslaunch so3_quadrotor_simulator task1.launch
 ```
 运行后如下所示，rviz开启，其中运动的无人机即为要追踪的uav1:
 ![task1](https://github.com/SKBT-lab/swarm_intelligent_robot_course_task/blob/main/src/figure/task1.gif)
@@ -77,7 +77,7 @@ roslaunch roslaunch so3_quadrotor_simulator task1.launch
 ```bash
 cd robot_ws/
 source devel/setup.bash
-roslaunch roslaunch so3_quadrotor_simulator task2.launch
+roslaunch so3_quadrotor_simulator task2.launch
 ```
 运行后如下所示，rviz开启，无人机群从左上角出发，右下方的红点为目标点，集群整体飞行至目标点附近即可。
 ![task2](https://github.com/SKBT-lab/swarm_intelligent_robot_course_task/blob/main/src/figure/2-1.jpeg)
@@ -97,7 +97,7 @@ roslaunch roslaunch so3_quadrotor_simulator task2.launch
 ```bash
 cd robot_ws/
 source devel/setup.bash
-roslaunch roslaunch so3_quadrotor_simulator task3.launch
+roslaunch so3_quadrotor_simulator task3.launch
 ```
 运行后如下所示，rviz开启，无人机群从中心区域出发，待探索范围为红色矩形围成的50mx50m区域。
 ![task3](https://github.com/SKBT-lab/swarm_intelligent_robot_course_task/blob/main/src/figure/3-2.jpeg)
@@ -126,7 +126,7 @@ roslaunch roslaunch so3_quadrotor_simulator task3.launch
 ```bash
 cd robot_ws/
 source devel/setup.bash
-roslaunch roslaunch so3_quadrotor_simulator task4.launch
+roslaunch so3_quadrotor_simulator task4.launch
 ```
 运行后如下所示，rviz开启，三个灰色区域为待探索区域。
 ![task2](https://github.com/SKBT-lab/swarm_intelligent_robot_course_task/blob/main/src/figure/task4.png)
