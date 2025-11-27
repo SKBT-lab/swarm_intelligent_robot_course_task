@@ -55,7 +55,7 @@ public:
         following_min_distance_ = 1.0;
         following_max_distance_ = 2.0;
         zero_threshold_ = 0.05;
-        start_threshold_ = 3;
+        start_threshold_ = 4;
         
         // 初始化发布器
         collision_marker_pub_ = nh_.advertise<visualization_msgs::Marker>("/collision_markers", 10);

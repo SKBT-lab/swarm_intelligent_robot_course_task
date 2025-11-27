@@ -405,16 +405,16 @@ private:
                     }
                 }
                 
-                // 检查距离规则
-                if (distance < min_distance_) {
-                    stats_.distance_near_violations++;
-                    ROS_WARN("%s and %s are too close! Distance: %.3f", 
-                            uav_names[i].c_str(), uav_names[j].c_str(), distance);
-                } else if (distance > max_distance_) {
-                    stats_.distance_far_violations++;
-                    ROS_WARN("%s and %s are too far! Distance: %.3f", 
-                            uav_names[i].c_str(), uav_names[j].c_str(), distance);
-                }
+                // // 检查距离规则
+                // if (distance < min_distance_) {
+                //     stats_.distance_near_violations++;
+                //     ROS_WARN("%s and %s are too close! Distance: %.3f", 
+                //             uav_names[i].c_str(), uav_names[j].c_str(), distance);
+                // } else if (distance > max_distance_) {
+                //     stats_.distance_far_violations++;
+                //     ROS_WARN("%s and %s are too far! Distance: %.3f", 
+                //             uav_names[i].c_str(), uav_names[j].c_str(), distance);
+                // }
             }
         }
         

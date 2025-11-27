@@ -4,6 +4,7 @@
 - [写在前面](#写在前面)
 - [运行环境](#运行环境)
 - [任务介绍](#任务介绍)
+- [规则检测(新增)](#规则检测脚本)
 
 ## 写在前面
 - 本次大作业共包含4个任务，选择其中一个完成。
@@ -140,3 +141,46 @@ roslaunch so3_quadrotor_simulator task4.launch
 - 如果对探索问题不是很了解，建议看一下任务3的相关说明。
 - nav_msgs/OccupancyGrid类型中的栅格坐标采用的是图像坐标系，即原点位于左上角，结合该话题消息中的栅格分辨率、原点坐标、栅格坐标等信息，可完成栅格坐标向世界坐标的转换。
 
+## 规则检测脚本
+- 11月27日16:38新增！请在此之前下载代码的同学重新clone最新代码并编译。<br>
+- 规则检测脚本用于自动检测任务执行过程中的诸多规则约束是否被满足或违反，已经整合到原launch文件中，无需调整启动方式，按照原本的指令roslaunch，脚本即可自动执行。
+- 该脚本检测结果将作为最终的打分依据，请同学在编写和调试的过程中严格参考该脚本的反馈信息。
+根据前面的任务描述，所监督的规则细则总结如下：
+
+### 任务1
+  1. **任务开始**：uav1开始起飞之后视作任务开始，脚本开始计时<br>
+  ![task1begin](https://github.com/SKBT-lab/swarm_intelligent_robot_course_task/blob/main/src/figure/task1_start.jpeg)
+  2. **有效跟随检测**：按照[任务要求第3点](#任务1-集群围捕)所述，脚本会测量并累积飞行过程中有效跟随的时间。
+  3. **碰撞检测**：脚本会自动进行碰撞检测，碰撞一旦发生，将会在终端打印提示信息，并在rviz窗口中对碰撞点进行显示。关于碰撞判定详见[基本接口第3条](#基本接口)<br>
+  ![coll1](https://github.com/SKBT-lab/swarm_intelligent_robot_course_task/blob/main/src/figure/coll_terminal.png)
+  ![coll2](https://github.com/SKBT-lab/swarm_intelligent_robot_course_task/blob/main/src/figure/colli.png)
+  4. **任务完成条件**：uav1运动停止视作任务停止，任务停止后,将对任务的完成情况进行汇总：<br>
+  ![task1end](https://github.com/SKBT-lab/swarm_intelligent_robot_course_task/blob/main/src/figure/task1_rule.jpeg)
+
+### 任务2
+  1. **任务开始**：任务节点启动之后计时开始。
+  2. **碰撞检测**：脚本会自动进行碰撞检测，碰撞一旦发生，将会在终端打印提示信息，并在rviz窗口中对碰撞点进行显示, 其中无人机之间的碰撞点为橙色，无人机与障碍之间的碰撞点为红色。关于碰撞判定详见[基本接口第3条](#基本接口)
+  3. **速度限制检查**：6m/s最大速度限制。
+  4. **距离规则检查**：无人机间距离保持在0.5m-5m之间。
+  5. **高度限制检查**：飞行高度不超过8m。
+  6. **任务完成条件**：6个无人机到目标点(30,30,2.5)的平均距离≤2m。
+  7. 上述指标在检测出违反情况时均会在终端中打印相应的警告信息。并且当任务完成后，会对总用时等任务完成情况以及所有规则违反情况进行汇总。<br>
+  ![task2end](https://github.com/SKBT-lab/swarm_intelligent_robot_course_task/blob/main/src/figure/task2_rule.jpeg)
+
+  ### 任务3
+  1. **任务开始**：任务节点启动之后计时开始。
+  2. **碰撞检测**：脚本会自动进行碰撞检测，碰撞一旦发生，将会在终端打印提示信息，并在rviz窗口中对碰撞点进行显示, 其中无人机之间的碰撞点为橙色，无人机与障碍之间的碰撞点为红色。关于碰撞判定详见[基本接口第3条](#基本接口)
+  3. **速度限制检查**：6m/s最大速度限制。
+  4. **高度限制检查**：飞行高度不超过8m。
+  5. **任务完成条件**：探索率达到100%。
+  6. 上述指标在检测出违反情况时均会在终端中打印相应的警告信息。并且当任务完成后，会对总用时等任务完成情况以及所有规则违反情况进行汇总，类似于任务2。<br>
+
+  ### 任务4
+  1. **任务开始**：由于本任务的特殊性，脚本将在首个无人机开始运动时开始计时，此时视作任务开始。<br>
+  ![task4begin](https://github.com/SKBT-lab/swarm_intelligent_robot_course_task/blob/main/src/figure/task4_start.jpeg)<br>
+  故选择该题的同学请等待终端打印各uav初始化完成的信息之后，再运行自己的程序。<br>
+  ![task4begin](https://github.com/SKBT-lab/swarm_intelligent_robot_course_task/blob/main/src/figure/task4_init.png)
+  2. **距离规则检查**： uav离开起点视作起飞，已起飞的无人机间距不得小于3m，一旦两架无人机的间距小于3m, rviz窗口中将对这两个无人机的中点进行显示。
+  4. **速度限制检查**：6m/s最大速度限制。
+  5. **任务完成条件**：三个区域的总探索率达到100%。
+  6. 上述指标在检测出违反情况时均会在终端中打印相应的警告信息。并且当任务完成后，会对总用时等任务完成情况以及所有规则违反情况进行汇总，类似于任务2。<br>
