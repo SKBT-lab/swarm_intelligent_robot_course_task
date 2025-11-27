@@ -80,6 +80,9 @@
 
     <node pkg="marker_publisher" type="marker_publisher" name="marker_publisher" output="screen"/>
 
+     <node name="rule_check" pkg="rule_check" type="task2_rule" 
+          launch-prefix="xterm -e" output="screen"/>
+
 
     <!-- RVIZ -->
     <node name="rviz" pkg="rviz" type="rviz" args="-d $(find so3_quadrotor_simulator)/config/rviz.rviz"/>

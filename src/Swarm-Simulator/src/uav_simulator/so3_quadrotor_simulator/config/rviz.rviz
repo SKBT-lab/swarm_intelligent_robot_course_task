@@ -14,6 +14,7 @@ Panels:
         - /Marker2
         - /Marker6
         - /Map1
+        - /Marker11
       Splitter Ratio: 0.5176470875740051
     Tree Height: 724
   - Class: rviz/Selection
@@ -73,7 +74,7 @@ Visualization Manager:
       Marker Topic: /uav1/odom_visualization/robot
       Name: UAV1
       Namespaces:
-        {}
+        mesh: true
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -129,7 +130,7 @@ Visualization Manager:
       Marker Topic: /uav8/odom_visualization/robot
       Name: UAV8
       Namespaces:
-        mesh: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -137,7 +138,7 @@ Visualization Manager:
       Marker Topic: /uav9/odom_visualization/robot
       Name: UAV9
       Namespaces:
-        mesh: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -145,7 +146,7 @@ Visualization Manager:
       Marker Topic: /uav10/odom_visualization/robot
       Name: UAV10
       Namespaces:
-        mesh: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -945,7 +946,7 @@ Visualization Manager:
       Marker Topic: /uav8/fov_marker
       Name: Marker
       Namespaces:
-        fov_circle_uav8: true
+        {}
       Queue Size: 100
       Value: true
     - Alpha: 1
@@ -989,7 +990,7 @@ Visualization Manager:
       Marker Topic: /uav2/fov_marker
       Name: Marker
       Namespaces:
-        fov_circle_uav2: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -997,7 +998,7 @@ Visualization Manager:
       Marker Topic: /uav3/fov_marker
       Name: Marker
       Namespaces:
-        fov_circle_uav3: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -1005,7 +1006,7 @@ Visualization Manager:
       Marker Topic: /uav4/fov_marker
       Name: Marker
       Namespaces:
-        fov_circle_uav4: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -1013,7 +1014,7 @@ Visualization Manager:
       Marker Topic: /uav5/fov_marker
       Name: Marker
       Namespaces:
-        fov_circle_uav5: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -1021,7 +1022,7 @@ Visualization Manager:
       Marker Topic: /uav6/fov_marker
       Name: Marker
       Namespaces:
-        fov_circle_uav6: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -1029,7 +1030,7 @@ Visualization Manager:
       Marker Topic: /uav7/fov_marker
       Name: Marker
       Namespaces:
-        fov_circle_uav7: true
+        {}
       Queue Size: 100
       Value: true
     - Alpha: 0.699999988079071
@@ -1077,7 +1078,7 @@ Visualization Manager:
       Marker Topic: /uav10/fov_marker
       Name: Marker
       Namespaces:
-        fov_circle_uav10: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -1085,7 +1086,15 @@ Visualization Manager:
       Marker Topic: /uav9/fov_marker
       Name: Marker
       Namespaces:
-        fov_circle_uav9: true
+        {}
+      Queue Size: 100
+      Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /collision_markers
+      Name: Marker
+      Namespaces:
+        {}
       Queue Size: 100
       Value: true
   Enabled: true
@@ -1118,7 +1127,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 291.32867431640625
+      Distance: 92.19921875
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1

@@ -6,11 +6,14 @@
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
+#include <pcl/kdtree/kdtree_flann.h>
 #include <nav_msgs/OccupancyGrid.h>
 #include <Eigen/Dense>
 #include <vector>
 #include <map>
 #include <string>
+#include <unordered_map>
+#include <chrono>
 
 // 网格状态枚举
 enum GridStatus {
@@ -28,10 +31,8 @@ private:
     ros::Subscriber map_sub_;
     
     // 发布者
-    // ros::Publisher exploration_pub_;
-    // ros::Publisher rectangle_pub_;
-    // ros::Publisher obstacle_pub_;
-    ros::Publisher grid_info_pub_;  // 新增：网格信息发布者
+    ros::Publisher grid_info_pub_;
+    ros::Publisher marker_pub_;  // 新增：碰撞标记发布者
     
     // 探索区域参数
     Eigen::Vector2d exploration_center_;
@@ -46,6 +47,7 @@ private:
     
     // 无人机信息
     std::map<std::string, Eigen::Vector3d> uav_positions_;
+    std::map<std::string, geometry_msgs::Vector3> uav_velocities_;
     std::vector<std::string> uav_names_;
     
     // FOV参数
@@ -54,6 +56,38 @@ private:
     // 地图处理标志
     bool map_processed_;
     
+    // 碰撞检测相关
+    pcl::PointCloud<pcl::PointXYZ>::Ptr obstacle_cloud_;
+    pcl::KdTreeFLANN<pcl::PointXYZ> kdtree_;
+    std::vector<geometry_msgs::Point> uav_uav_collisions_;
+    std::vector<geometry_msgs::Point> uav_obstacle_collisions_;
+    
+    // 规则参数
+    double uav_obstacle_threshold_;
+    double uav_uav_threshold_;
+    double min_marker_distance_;
+    double max_speed_;
+    double min_distance_;
+    double max_distance_;
+    double max_height_;
+    
+    // 任务状态
+    bool mission_success_;
+    std::chrono::steady_clock::time_point start_time_;
+    double mission_duration_;
+    
+    // 统计信息
+    struct MissionStats {
+        int uav_uav_collisions = 0;
+        int uav_obstacle_collisions = 0;
+        int speed_violations = 0;
+        int distance_near_violations = 0;
+        int distance_far_violations = 0;
+        int height_violations = 0;
+        std::unordered_map<std::string, int> uav_speed_violations;
+        std::unordered_map<std::string, int> uav_height_violations;
+    } stats_;
+    
 public:
     ExplorationVisualizer() : 
         exploration_center_(0.0, 0.0),
@@ -61,7 +95,9 @@ public:
         exploration_height_(50.0),
         fov_scale_(0.5),
         grid_resolution_(0.1),
-        map_processed_(false) {
+        map_processed_(false),
+        obstacle_cloud_(new pcl::PointCloud<pcl::PointXYZ>()),
+        mission_success_(false) {
         
         // 从参数服务器读取参数
         nh_.param<double>("grid_resolution", grid_resolution_, 0.1);
@@ -71,17 +107,24 @@ public:
         nh_.param<double>("exploration_height", exploration_height_, 50.0);
         nh_.param<double>("fov_scale", fov_scale_, 0.5);
         
+        // 规则参数
+        nh_.param("uav_obstacle_threshold", uav_obstacle_threshold_, 0.2);
+        nh_.param("uav_uav_threshold", uav_uav_threshold_, 0.4);
+        nh_.param("min_marker_distance", min_marker_distance_, 1.0);
+        nh_.param("max_speed", max_speed_, 6.0);
+        nh_.param("min_distance", min_distance_, 0.5);
+        nh_.param("max_distance", max_distance_, 5.0);
+        nh_.param("max_height", max_height_, 8.0);
+        
         // 初始化网格
         updateGridSize();
         
         // 初始化无人机名称
         uav_names_ = {"uav2", "uav3", "uav4", "uav5", "uav6", "uav7"};
         
-        // 创建发布者
-        // exploration_pub_ = nh_.advertise<visualization_msgs::Marker>("exploration_status", 10, true);
-        // rectangle_pub_ = nh_.advertise<visualization_msgs::Marker>("exploration_region", 10, true);
-        // obstacle_pub_ = nh_.advertise<visualization_msgs::Marker>("obstacle_map", 10, true);
-        grid_info_pub_ = nh_.advertise<nav_msgs::OccupancyGrid>("exploration_grid", 10, true);  // 新增
+        // 初始化发布者
+        grid_info_pub_ = nh_.advertise<nav_msgs::OccupancyGrid>("exploration_grid", 10, true);
+        marker_pub_ = nh_.advertise<visualization_msgs::Marker>("/collision_markers", 10);
         
         // 订阅地图话题
         map_sub_ = nh_.subscribe<sensor_msgs::PointCloud2>("/mock_map", 1, 
@@ -95,9 +138,16 @@ public:
                 boost::bind(&ExplorationVisualizer::odomCallback, this, _1, uav_name)
             );
             odom_subs_.push_back(sub);
+            
+            // 初始化统计信息
+            stats_.uav_speed_violations[uav_name] = 0;
+            stats_.uav_height_violations[uav_name] = 0;
         }
         
-        ROS_INFO("Exploration Visualizer initialized");
+        // 记录开始时间
+        start_time_ = std::chrono::steady_clock::now();
+        
+        ROS_INFO("Exploration Visualizer with Rule Checking initialized");
         ROS_INFO("Waiting for map data from /mock_map...");
     }
     
@@ -109,17 +159,13 @@ public:
         ROS_INFO("Received map point cloud with %d points", msg->width * msg->height);
         
         // 转换点云数据
-        pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
-        pcl::fromROSMsg(*msg, *cloud);
+        pcl::fromROSMsg(*msg, *obstacle_cloud_);
+        
+        // 构建KD树用于碰撞检测
+        kdtree_.setInputCloud(obstacle_cloud_);
         
         // 处理障碍物
-        processObstacles(cloud);
-        
-        // 发布障碍物可视化
-        // publishObstacleMap();
-        
-        // 发布探索区域
-        // publishExplorationRegion();
+        processObstacles(obstacle_cloud_);
         
         // 发布初始网格信息
         publishGridInfo();
@@ -167,8 +213,16 @@ public:
         
         uav_positions_[uav_name] = position;
         
+        // 更新无人机速度
+        uav_velocities_[uav_name] = msg->twist.twist.linear;
+        
         // 更新探索状态
         updateExplorationStatus();
+        
+        // 检查所有规则
+        if (!mission_success_) {
+            checkAllRules();
+        }
         
         // 发布探索状态可视化
         publishExplorationStatus();
@@ -278,6 +332,241 @@ private:
         }
     }
     
+    void checkAllRules() {
+        if (uav_positions_.size() < 6 || obstacle_cloud_->empty()) {
+            return; // 等待所有数据就绪
+        }
+        
+        // 检查任务成功条件
+        checkMissionSuccess();
+        if (mission_success_) {
+            return;
+        }
+        
+        std::vector<geometry_msgs::Point> new_uav_uav_collisions;
+        std::vector<geometry_msgs::Point> new_uav_obstacle_collisions;
+        
+        // 1. 检查无人机与障碍物的碰撞
+        for (const auto& uav_pair : uav_positions_) {
+            Eigen::Vector3d uav_pos = uav_pair.second;
+            pcl::PointXYZ search_point(uav_pos.x(), uav_pos.y(), uav_pos.z());
+            
+            std::vector<int> point_idx(1);
+            std::vector<float> point_sqr_distance(1);
+            
+            if (kdtree_.nearestKSearch(search_point, 1, point_idx, point_sqr_distance) > 0) {
+                double distance = std::sqrt(point_sqr_distance[0]);
+                
+                if (distance < uav_obstacle_threshold_) {
+                    geometry_msgs::Point collision_point;
+                    collision_point.x = uav_pos.x();
+                    collision_point.y = uav_pos.y();
+                    collision_point.z = uav_pos.z();
+                    
+                    // 检查是否在最小距离内已存在同类碰撞标记
+                    if (!isNearExistingCollision(collision_point, uav_obstacle_collisions_)) {
+                        new_uav_obstacle_collisions.push_back(collision_point);
+                        uav_obstacle_collisions_.push_back(collision_point);
+                        stats_.uav_obstacle_collisions++;
+                        ROS_WARN("UAV-%s collided with obstacle! Distance: %.3f", 
+                                uav_pair.first.c_str(), distance);
+                    }
+                }
+            }
+        }
+        
+        // 2. 检查无人机之间的碰撞和距离规则
+        std::vector<std::string> uav_names;
+        for (const auto& pair : uav_positions_) {
+            uav_names.push_back(pair.first);
+        }
+        
+        for (size_t i = 0; i < uav_names.size(); i++) {
+            for (size_t j = i + 1; j < uav_names.size(); j++) {
+                Eigen::Vector3d pos1 = uav_positions_[uav_names[i]];
+                Eigen::Vector3d pos2 = uav_positions_[uav_names[j]];
+                
+                double distance = calculateDistance(pos1, pos2);
+                
+                // 检查碰撞
+                if (distance < uav_uav_threshold_) {
+                    geometry_msgs::Point collision_point;
+                    collision_point.x = (pos1.x() + pos2.x()) / 2.0;
+                    collision_point.y = (pos1.y() + pos2.y()) / 2.0;
+                    collision_point.z = (pos1.z() + pos2.z()) / 2.0;
+                    
+                    // 检查是否在最小距离内已存在同类碰撞标记
+                    if (!isNearExistingCollision(collision_point, uav_uav_collisions_)) {
+                        new_uav_uav_collisions.push_back(collision_point);
+                        uav_uav_collisions_.push_back(collision_point);
+                        stats_.uav_uav_collisions++;
+                        ROS_WARN("Collision between %s and %s! Distance: %.3f", 
+                                uav_names[i].c_str(), uav_names[j].c_str(), distance);
+                    }
+                }
+                
+                // 检查距离规则
+                if (distance < min_distance_) {
+                    stats_.distance_near_violations++;
+                    ROS_WARN("%s and %s are too close! Distance: %.3f", 
+                            uav_names[i].c_str(), uav_names[j].c_str(), distance);
+                } else if (distance > max_distance_) {
+                    stats_.distance_far_violations++;
+                    ROS_WARN("%s and %s are too far! Distance: %.3f", 
+                            uav_names[i].c_str(), uav_names[j].c_str(), distance);
+                }
+            }
+        }
+        
+        // 3. 检查速度规则
+        for (const auto& uav_pair : uav_velocities_) {
+            double speed = calculateSpeed(uav_pair.second);
+            if (speed > max_speed_) {
+                stats_.speed_violations++;
+                stats_.uav_speed_violations[uav_pair.first]++;
+                ROS_WARN("%s overspeed! Current speed: %.3f m/s", uav_pair.first.c_str(), speed);
+            }
+        }
+        
+        // 4. 检查高度规则
+        for (const auto& uav_pair : uav_positions_) {
+            if (uav_pair.second.z() > max_height_) {
+                stats_.height_violations++;
+                stats_.uav_height_violations[uav_pair.first]++;
+                ROS_WARN("%s exceeded height limit! Current height: %.3f m", 
+                        uav_pair.first.c_str(), uav_pair.second.z());
+            }
+        }
+        
+        // 发布碰撞标记
+        publishCollisionMarkers(new_uav_uav_collisions, new_uav_obstacle_collisions);
+    }
+    
+    void checkMissionSuccess() {
+        // 计算探索进度（排除障碍物）
+        int explored_count = countGridsByStatus(EXPLORED);
+        int obstacle_count = countGridsByStatus(OBSTACLE);
+        int explorable_count = grid_status_.size() - obstacle_count;
+        
+        double progress = (explorable_count > 0) ? 
+                         static_cast<double>(explored_count) / explorable_count : 0.0;
+        
+        if (progress >= 1.0 && !mission_success_) {
+            mission_success_ = true;
+            auto end_time = std::chrono::steady_clock::now();
+            mission_duration_ = std::chrono::duration_cast<std::chrono::milliseconds>(
+                end_time - start_time_).count() / 1000.0;
+            
+            ROS_INFO("==========================================");
+            ROS_INFO("  MISSION SUCCESS! ");
+            ROS_INFO("Exploration progress: %.1f%% (%d/%d cells)", 
+                     progress * 100.0, explored_count, explorable_count);
+            ROS_INFO("Mission completed in: %.3f seconds", mission_duration_);
+            ROS_INFO("==========================================");
+            
+            // 打印任务统计信息
+            printMissionSummary();
+        }
+    }
+    
+    void printMissionSummary() {
+        ROS_INFO("  MISSION SUMMARY:");
+        ROS_INFO("Total mission time: %.3f seconds", mission_duration_);
+        ROS_INFO("Collision statistics:");
+        ROS_INFO("  - UAV-UAV collisions: %d", stats_.uav_uav_collisions);
+        ROS_INFO("  - UAV-Obstacle collisions: %d", stats_.uav_obstacle_collisions);
+        ROS_INFO("Speed violations: %d", stats_.speed_violations);
+        ROS_INFO("Distance violations:");
+        ROS_INFO("  - Too close: %d", stats_.distance_near_violations);
+        ROS_INFO("  - Too far: %d", stats_.distance_far_violations);
+        ROS_INFO("Height violations: %d", stats_.height_violations);
+        
+        ROS_INFO("Per-UAV statistics:");
+        for (const auto& uav_name : uav_names_) {
+            ROS_INFO("  %s: Speed violations: %d, Height violations: %d", 
+                    uav_name.c_str(), 
+                    stats_.uav_speed_violations[uav_name],
+                    stats_.uav_height_violations[uav_name]);
+        }
+        
+        // 计算总违规次数
+        int total_violations = stats_.uav_uav_collisions + stats_.uav_obstacle_collisions +
+                              stats_.speed_violations + stats_.distance_near_violations +
+                              stats_.distance_far_violations + stats_.height_violations;
+        
+        if (total_violations == 0) {
+            ROS_INFO("  Perfect mission! No rule violations detected.");
+        } else {
+            ROS_INFO("  Total rule violations: %d", total_violations);
+        }
+    }
+    
+    bool isNearExistingCollision(const geometry_msgs::Point& new_point, 
+                                const std::vector<geometry_msgs::Point>& existing_collisions) {
+        for (const auto& existing_point : existing_collisions) {
+            double distance = calculateDistance(existing_point, new_point);
+            if (distance < min_marker_distance_) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    double calculateDistance(const Eigen::Vector3d& p1, const Eigen::Vector3d& p2) {
+        return (p1 - p2).norm();
+    }
+    
+    double calculateDistance(const geometry_msgs::Point& p1, const geometry_msgs::Point& p2) {
+        double dx = p1.x - p2.x;
+        double dy = p1.y - p2.y;
+        double dz = p1.z - p2.z;
+        return std::sqrt(dx*dx + dy*dy + dz*dz);
+    }
+    
+    double calculateSpeed(const geometry_msgs::Vector3& velocity) {
+        return std::sqrt(velocity.x*velocity.x + velocity.y*velocity.y + velocity.z*velocity.z);
+    }
+    
+    void publishCollisionMarkers(const std::vector<geometry_msgs::Point>& uav_uav_collisions,
+                                const std::vector<geometry_msgs::Point>& uav_obstacle_collisions) {
+        visualization_msgs::Marker marker;
+        marker.header.frame_id = "world";
+        marker.header.stamp = ros::Time::now();
+        marker.ns = "collisions";
+        marker.type = visualization_msgs::Marker::SPHERE_LIST;
+        marker.action = visualization_msgs::Marker::ADD;
+        marker.pose.orientation.w = 1.0;
+        marker.lifetime = ros::Duration(0);
+        
+        // 发布无人机-无人机碰撞标记（橙色）
+        if (!uav_uav_collisions.empty()) {
+            marker.id = 0;
+            marker.scale.x = 0.3;
+            marker.scale.y = 0.3;
+            marker.scale.z = 0.3;
+            marker.color.r = 1.0;
+            marker.color.g = 0.5;
+            marker.color.b = 0.0;
+            marker.color.a = 1.0;
+            marker.points = uav_uav_collisions;
+            marker_pub_.publish(marker);
+        }
+        
+        // 发布无人机-障碍物碰撞标记（红色）
+        if (!uav_obstacle_collisions.empty()) {
+            marker.id = 1;
+            marker.scale.x = 0.3;
+            marker.scale.y = 0.3;
+            marker.scale.z = 0.3;
+            marker.color.r = 1.0;
+            marker.color.g = 0.0;
+            marker.color.b = 0.0;
+            marker.color.a = 1.0;
+            marker.points = uav_obstacle_collisions;
+            marker_pub_.publish(marker);
+        }
+    }
+    
     void publishGridInfo() {
         nav_msgs::OccupancyGrid grid_msg;
         
@@ -292,73 +581,34 @@ private:
         grid_msg.info.origin.position.x = exploration_center_.x() - exploration_width_/2;
         grid_msg.info.origin.position.y = exploration_center_.y() - exploration_height_/2;
         grid_msg.info.origin.position.z = 0.0;
-        grid_msg.info.origin.orientation.x = 0.0;
-        grid_msg.info.origin.orientation.y = 0.0;
-        grid_msg.info.origin.orientation.z = 0.0;
         grid_msg.info.origin.orientation.w = 1.0;
         
-        // 修复：正确的坐标映射
         grid_msg.data.resize(grid_width_ * grid_height_);
         
         for (int y = 0; y < grid_height_; ++y) {
             for (int x = 0; x < grid_width_; ++x) {
                 int our_index = y * grid_width_ + x;
-                
-                // 修复：OccupancyGrid使用行优先存储，但Y轴是从上到下的
-                // 所以我们需要将Y坐标翻转：grid_height_ - 1 - y
                 int occupancy_index = y * grid_width_ + x;
                 
                 switch (grid_status_[our_index]) {
                     case OBSTACLE:
-                        grid_msg.data[occupancy_index] = 100;  // 障碍物
+                        grid_msg.data[occupancy_index] = 100;
                         break;
                     case EXPLORED:
-                        grid_msg.data[occupancy_index] = 0;    // 已探索的自由空间
+                        grid_msg.data[occupancy_index] = 0;
                         break;
                     case UNEXPLORED:
                     default:
-                        grid_msg.data[occupancy_index] = -1;   // 未探索
+                        grid_msg.data[occupancy_index] = -1;
                         break;
                 }
             }
         }
         
         grid_info_pub_.publish(grid_msg);
-        
-        ROS_DEBUG_THROTTLE(5.0, "Published grid info: %dx%d, resolution: %.3f", 
-                        grid_width_, grid_height_, grid_resolution_);
-}
+    }
     
     void publishExplorationStatus() {
-        // visualization_msgs::Marker explored_marker;
-        // setupMarker(explored_marker, "explored_area", 0, visualization_msgs::Marker::CUBE_LIST);
-        // explored_marker.scale.x = grid_resolution_;
-        // explored_marker.scale.y = grid_resolution_;
-        // explored_marker.scale.z = 0.01;
-        // explored_marker.color.r = 0.0;
-        // explored_marker.color.g = 1.0;
-        // explored_marker.color.b = 0.0;
-        // explored_marker.color.a = 0.8;
-
-        // // std::cout << grid_resolution_ << std::endl;
-        
-        // // 添加所有已探索的网格
-        // for (int y = 0; y < grid_height_; ++y) {
-        //     for (int x = 0; x < grid_width_; ++x) {
-        //         int index = y * grid_width_ + x;
-        //         if (grid_status_[index] == EXPLORED) {
-        //             Eigen::Vector2d world_pos = gridToWorld(x, y);
-        //             geometry_msgs::Point p;
-        //             p.x = world_pos.x();
-        //             p.y = world_pos.y();
-        //             p.z = 0.0;
-        //             explored_marker.points.push_back(p);
-        //         }
-        //     }
-        // }
-        
-        // exploration_pub_.publish(explored_marker);
-        
         // 计算探索进度（排除障碍物）
         int explored_count = countGridsByStatus(EXPLORED);
         int obstacle_count = countGridsByStatus(OBSTACLE);
@@ -367,96 +617,15 @@ private:
         double progress = (explorable_count > 0) ? 
                          static_cast<double>(explored_count) / explorable_count : 0.0;
         
-        ROS_INFO_THROTTLE(5.0, "Exploration progress: %.1f%% (%d/%d cells, %d obstacles)", 
-                         progress * 100.0, explored_count, explorable_count, obstacle_count);
-    }
-    
-    // void publishObstacleMap() {
-    //     visualization_msgs::Marker obstacle_marker;
-    //     setupMarker(obstacle_marker, "obstacles", 0, visualization_msgs::Marker::CUBE_LIST);
-    //     obstacle_marker.scale.x = grid_resolution_;
-    //     obstacle_marker.scale.y = grid_resolution_;
-    //     obstacle_marker.scale.z = 0.02;  // 比探索区域稍高
-    //     obstacle_marker.color.r = 0.5;   // 灰色
-    //     obstacle_marker.color.g = 0.5;
-    //     obstacle_marker.color.b = 0.5;
-    //     obstacle_marker.color.a = 0.8;
-        
-    //     // 添加所有障碍物网格
-    //     for (int y = 0; y < grid_height_; ++y) {
-    //         for (int x = 0; x < grid_width_; ++x) {
-    //             int index = y * grid_width_ + x;
-    //             if (grid_status_[index] == OBSTACLE) {
-    //                 Eigen::Vector2d world_pos = gridToWorld(x, y);
-    //                 geometry_msgs::Point p;
-    //                 p.x = world_pos.x();
-    //                 p.y = world_pos.y();
-    //                 p.z = 0.01;  // 稍微抬高避免z-fighting
-    //                 obstacle_marker.points.push_back(p);
-    //             }
-    //         }
-    //     }
-        
-    //     obstacle_pub_.publish(obstacle_marker);
-    // }
-    
-    // void publishExplorationRegion() {
-    //     visualization_msgs::Marker region_marker;
-    //     setupMarker(region_marker, "exploration_region", 0, visualization_msgs::Marker::LINE_STRIP);
-    //     region_marker.scale.x = 0.05;
-    //     region_marker.color.r = 1.0;
-    //     region_marker.color.g = 0.0;
-    //     region_marker.color.b = 0.0;
-    //     region_marker.color.a = 1.0;
-        
-    //     // 添加矩形顶点
-    //     std::vector<Eigen::Vector2d> vertices = {
-    //         Eigen::Vector2d(exploration_center_.x() - exploration_width_/2, exploration_center_.y() - exploration_height_/2),
-    //         Eigen::Vector2d(exploration_center_.x() + exploration_width_/2, exploration_center_.y() - exploration_height_/2),
-    //         Eigen::Vector2d(exploration_center_.x() + exploration_width_/2, exploration_center_.y() + exploration_height_/2),
-    //         Eigen::Vector2d(exploration_center_.x() - exploration_width_/2, exploration_center_.y() + exploration_height_/2)
-    //     };
-        
-    //     for (const auto& vertex : vertices) {
-    //         geometry_msgs::Point p;
-    //         p.x = vertex.x();
-    //         p.y = vertex.y();
-    //         p.z = 0.0;
-    //         region_marker.points.push_back(p);
-    //     }
-        
-    //     // 闭合矩形
-    //     geometry_msgs::Point first_point;
-    //     first_point.x = vertices[0].x();
-    //     first_point.y = vertices[0].y();
-    //     first_point.z = 0.0;
-    //     region_marker.points.push_back(first_point);
-        
-    //     rectangle_pub_.publish(region_marker);
-    // }
-    
-    void setupMarker(visualization_msgs::Marker& marker, const std::string& ns, int id, int type) {
-        marker.header.frame_id = "world";
-        marker.header.stamp = ros::Time::now();
-        marker.ns = ns;
-        marker.id = id;
-        marker.type = type;
-        marker.action = visualization_msgs::Marker::ADD;
-        
-        marker.pose.position.x = 0.0;
-        marker.pose.position.y = 0.0;
-        marker.pose.position.z = 0.0;
-        marker.pose.orientation.x = 0.0;
-        marker.pose.orientation.y = 0.0;
-        marker.pose.orientation.z = 0.0;
-        marker.pose.orientation.w = 1.0;
-        
-        marker.lifetime = ros::Duration();
+        if (!mission_success_) {
+            ROS_INFO_THROTTLE(5.0, "Exploration progress: %.1f%% (%d/%d cells, %d obstacles)", 
+                             progress * 100.0, explored_count, explorable_count, obstacle_count);
+        }
     }
 };
 
 int main(int argc, char** argv) {
-    ros::init(argc, argv, "exploration_visualizer_with_obstacles");
+    ros::init(argc, argv, "exploration_visualizer_with_rule_checking");
     ExplorationVisualizer visualizer;
     ros::spin();
     return 0;
